@@ -1,0 +1,370 @@
+﻿# app.py – RecruitIQ Main Entry Point
+# Python 3.10+ | Streamlit | Supabase + psycopg2
+
+import io
+import os
+import sys
+import logging
+from pathlib import Path
+from dotenv import load_dotenv
+
+# ── UTF-8 Encoding (Windows compatibility) ────────────────────────────────────
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', newline='')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', newline='')
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+# ── Logging setup ─────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# ── Load .env BEFORE anything else touches os.getenv ─────────────────────────
+load_dotenv(dotenv_path=Path(__file__).parent / ".env", override=True)
+
+import streamlit as st
+
+# ── Page config (must be first Streamlit call) ────────────────────────────────
+st.set_page_config(
+    page_title="RecruitIQ",
+    page_icon="🎯",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ── UI helpers ────────────────────────────────────────────────────────────────
+try:
+    from ui.styles import apply_global_styles
+    apply_global_styles()
+except Exception as e:
+    logger.warning(f"Could not load global styles: {e}")
+    pass
+
+# ── Simple auth check (if ui.auth doesn't exist, skip) ────────────────────────
+try:
+    from ui.auth import check_auth
+    if not check_auth():
+        st.stop()
+except ModuleNotFoundError:
+    logger.warning("ui.auth module not found — skipping authentication check")
+    pass
+
+# ── Page module imports ───────────────────────────────────────────────────────
+# Each module exposes only a render_* function; no widgets run at import time.
+from ui.pages.dashboard import render_dashboard
+from ui.pages.profiles import render_profile_database
+from ui.pages.jd_manager import render_jd_manager
+from ui.pages.matching import render_matching
+from ui.pages.tracker import render_candidate_tracker
+from ui.pages.interviews import render_interview_scheduler
+from ui.pages.social import render_social_media
+from ui.pages.ai_sourcing import render_ai_sourcing
+from ui.pages.upload import render_upload_page
+
+# ── Page registry ─────────────────────────────────────────────────────────────
+_PAGES = {
+    "🏠 Dashboard": render_dashboard,
+    "👥 Profiles": render_profile_database,
+    "📄 JD Manager": render_jd_manager,
+    "🎯 JD Matching": render_matching,
+    "📊 Tracker": render_candidate_tracker,
+    "📅 Interviews": render_interview_scheduler,
+    "📱 Social Media": render_social_media,
+    "🤖 AI Sourcing": render_ai_sourcing,
+    "⬆️ Upload": render_upload_page,
+}
+
+# ── NAV SESSION STATE KEY ─────────────────────────────────────────────────────
+# IMPORTANT: Use "nav_page" exclusively for navigation state.
+# Never use bare "page" — page modules (e.g. profiles) use "prof_page",
+# other modules may use their own prefixed keys. A bare "page" key is
+# reserved for no one to avoid cross-module collisions.
+_NAV_KEY = "nav_page"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Service Factory
+# ══════════════════════════════════════════════════════════════════════════════
+
+@st.cache_resource
+def build_services():
+    """
+    Builds and caches all heavy singleton services.
+
+    Supabase key resolution order (first non-empty wins):
+      SUPABASE_KEY  →  SUPABASE_ANON_KEY  →  SUPABASE_SERVICE_KEY
+      →  SUPABASE_SERVICE_ROLE_KEY
+
+    Services returned:
+      - db          : SupabaseManager instance
+      - llm         : LLMHandler instance
+      - jd_parser   : JDParser (uses LLM)
+      - scorer      : ProfileScoringEngine
+      - banner_gen  : SocialBannerGenerator
+    """
+    logger.info("🏗️ Building services...")
+
+    from database.supabase_manager import SupabaseManager
+    from modules.jd_engine.jd_parser import JDParser
+    from modules.jd_engine.scoring_engine import ProfileScoringEngine
+    from modules.ai_engine.llm_handler import LLMHandler
+    from modules.social_media.banner_generator import SocialBannerGenerator
+
+    # ── Resolve Supabase credentials ──────────────────────────────────────────
+    SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+    SUPABASE_KEY = (
+        os.getenv("SUPABASE_KEY", "").strip()
+        or os.getenv("SUPABASE_ANON_KEY", "").strip()
+        or os.getenv("SUPABASE_SERVICE_KEY", "").strip()
+        or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    )
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        raise ValueError(
+            "Supabase credentials missing — "
+            f"URL={'SET' if SUPABASE_URL else 'MISSING'}, "
+            f"KEY={'SET' if SUPABASE_KEY else 'MISSING'}"
+        )
+
+    logger.info("✅ Supabase credentials resolved")
+
+    # ── Initialize core services ──────────────────────────────────────────────
+    db = SupabaseManager(url=SUPABASE_URL, key=SUPABASE_KEY)
+    logger.info("✅ SupabaseManager initialized")
+
+    llm = LLMHandler()
+    logger.info("✅ LLMHandler initialized")
+
+    jd_parser = JDParser()
+    jd_parser.set_llm(llm)
+    logger.info("✅ JDParser initialized with LLM injection")
+
+    scorer = ProfileScoringEngine(llm=llm)
+    logger.info("✅ ProfileScoringEngine initialized")
+
+    banner_gen = SocialBannerGenerator()
+    logger.info("✅ SocialBannerGenerator initialized")
+
+    services = {
+        "db": db,
+        "llm": llm,
+        "jd_parser": jd_parser,
+        "scorer": scorer,
+        "banner_gen": banner_gen,
+    }
+
+    logger.info(f"✅ All {len(services)} services built successfully")
+    return services
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Sidebar
+# ══════════════════════════════════════════════════════════════════════════════
+
+def render_sidebar(pages, services=None):
+    """
+    Renders the sidebar navigation and returns the selected page key.
+
+    Navigation state is stored under st.session_state[_NAV_KEY] ("nav_page").
+    This key is intentionally distinct from any page-level state keys
+    (e.g. "prof_page", "tracker_page") to prevent cross-module collisions.
+
+    Args:
+        pages: Dict of page name → render function
+        services: Optional services dict for stats
+
+    Returns:
+        Selected page key
+    """
+    with st.sidebar:
+        # ── Logo or title ─────────────────────────────────────────────────────
+        logo_path = Path(__file__).parent / "assets" / "logo.png"
+        if logo_path.exists():
+            st.image(str(logo_path), use_container_width=True)
+        else:
+            st.title("🎯 RecruitIQ")
+
+        st.markdown("---")
+
+        # ── Navigation radio ──────────────────────────────────────────────────
+        page_keys = list(pages.keys())
+        default_page = "🏠 Dashboard"
+
+        # Safe index resolution
+        # _NAV_KEY may hold a stale value after hot-reload or logout;
+        # fall back to Dashboard if the stored key is no longer valid.
+        current_nav = st.session_state.get(_NAV_KEY, default_page)
+
+        if current_nav not in page_keys:
+            current_nav = default_page
+            st.session_state[_NAV_KEY] = current_nav
+
+        safe_index = page_keys.index(current_nav)
+
+        # st.radio writes its own value into key="nav_radio" automatically;
+        # we separately persist the result under _NAV_KEY so it survives reruns.
+        selection = st.radio(
+            "Navigation",
+            page_keys,
+            index=safe_index,
+            label_visibility="collapsed",
+            key="nav_radio",
+        )
+
+        # Persist selection under our explicit nav key
+        st.session_state[_NAV_KEY] = selection
+
+        st.markdown("---")
+
+        # ── Quick stats ───────────────────────────────────────────────────────
+        if services:
+            try:
+                db = services["db"]
+
+                total_candidates = (
+                    db.get_candidate_count()
+                    if hasattr(db, "get_candidate_count")
+                    else "—"
+                )
+                active_jds = (
+                    db.get_active_jd_count()
+                    if hasattr(db, "get_active_jd_count")
+                    else "—"
+                )
+                open_positions = (
+                    db.get_open_position_count()
+                    if hasattr(db, "get_open_position_count")
+                    else "—"
+                )
+
+                st.markdown("**📊 Quick Stats**")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Candidates", total_candidates)
+                    st.metric("Active JDs", active_jds)
+                with col2:
+                    st.metric("Open Roles", open_positions)
+
+                st.markdown("---")
+
+            except Exception as e:
+                logger.warning(f"Could not load sidebar stats: {e}")
+                pass  # sidebar stats must never crash the app
+
+        # ── Logout ────────────────────────────────────────────────────────────
+        if st.button("🚪 Logout", use_container_width=True):
+            logger.info("User logout initiated")
+            # Wipe ALL session state so every page module starts fresh
+            st.session_state.clear()
+            st.rerun()
+
+        st.caption("RecruitIQ v2.8 · AI-Powered Recruiting")
+
+    return selection
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Router
+# ══════════════════════════════════════════════════════════════════════════════
+
+def route(selection, pages, services):
+    """
+    Dispatch to the correct page render function.
+
+    Argument contract
+    -----------------
+    Dashboard  → fn(services["db"])  owns its own layout, needs only the db handle
+    Profiles   → fn()                manages its own psycopg2 pool, needs nothing
+    All others → fn(services)        receive the full services dict
+
+    Args:
+        selection: Page key from sidebar
+        pages: Page registry (name → function)
+        services: Services dict from build_services()
+    """
+    fn = pages.get(selection)
+    if fn is None:
+        st.error(f"Page '{selection}' not found.")
+        logger.error(f"Page render function not found for '{selection}'")
+        return
+
+    logger.info(f"📄 Routing to: {selection}")
+
+    try:
+        if selection == "🏠 Dashboard":
+            fn(services["db"])
+        elif selection == "👥 Profiles":
+            fn()  # render_profile_database() — no args needed
+        else:
+            # All other pages receive full services dict
+            fn(services)
+
+    except TypeError as exc:
+        logger.warning(
+            f"Page {selection} TypeError: {exc} — retrying without arguments"
+        )
+        # Graceful fallback: some pages may not yet accept services
+        st.warning(
+            f"Page called without services dict ({exc}) — retrying bare call."
+        )
+        try:
+            fn()
+        except Exception as e:
+            st.error(f"Failed to render {selection}: {e}")
+            logger.error(f"Fallback render failed: {e}", exc_info=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Entry Point
+# ══════════════════════════════════════════════════════════════════════════════
+
+def main():
+    """Main entry point for RecruitIQ application."""
+
+    logger.info("🚀 RecruitIQ startup initiated")
+
+    # ── Build services ────────────────────────────────────────────────────────
+    try:
+        services = build_services()
+    except ValueError as exc:
+        logger.error(f"Configuration error: {exc}")
+        st.error(f"⚠️ Configuration error: {exc}")
+        st.info(
+            "Add your credentials to the `.env` file:\n"
+            "```\n"
+            "SUPABASE_URL=https://xxxx.supabase.co\n"
+            "SUPABASE_KEY=your-anon-or-service-key\n"
+            "OPENAI_API_KEY=sk-...\n"
+            "```"
+        )
+        st.stop()
+    except Exception as exc:
+        logger.error(f"Unexpected startup error: {exc}", exc_info=True)
+        st.error(f"⚠️ Unexpected startup error: {exc}")
+        st.exception(exc)
+        st.stop()
+
+    logger.info("✅ All services initialized successfully")
+
+    # ── Render sidebar & route ────────────────────────────────────────────────
+    try:
+        selection = render_sidebar(_PAGES, services)
+    except Exception as exc:
+        logger.error(f"Sidebar rendering failed: {exc}", exc_info=True)
+        st.error(f"⚠️ Sidebar error: {exc}")
+        st.stop()
+
+    try:
+        route(selection, _PAGES, services)
+    except Exception as exc:
+        logger.error(f"Error rendering {selection}: {exc}", exc_info=True)
+        st.error(f"⚠️ Error rendering **{selection}**: {exc}")
+        st.exception(exc)
+        if st.button("🔄 Reload page"):
+            st.rerun()
+
+
+if __name__ == "__main__":
+    main()

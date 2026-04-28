@@ -1,0 +1,12 @@
+# RecruitIQ
+.env
+*.db
+__pycache__/
+*.pyc
+.venv/
+venv/
+assets/banners/*.png
+*.egg-info/
+.DS_Store
+.streamlit/secrets.toml
+recruitiq_local.db
