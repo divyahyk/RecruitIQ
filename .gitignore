@@ -1,12 +1,17 @@
-# RecruitIQ
+﻿# Environment variables
 .env
-*.db
+.env.local
+.env.*.local
+
+# Secrets
+.streamlit/secrets.toml
+
+# Cache
 __pycache__/
 *.pyc
-.venv/
-venv/
-assets/banners/*.png
-*.egg-info/
-.DS_Store
-.streamlit/secrets.toml
-recruitiq_local.db
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
