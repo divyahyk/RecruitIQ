@@ -1,6 +1,6 @@
-from __future__ import annotations
+ï»¿from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
-# app.py – RecruitIQ Main Entry Point
+# app.py ï¿½ RecruitIQ Main Entry Point
 # Python 3.14 | Streamlit | Supabase + psycopg2
 
 import os
@@ -56,7 +56,7 @@ _PAGES: dict[str, object] = {
 
 # -- NAV SESSION STATE KEY -----------------------------------------------------
 # IMPORTANT: Use "nav_page" exclusively for navigation state.
-# Never use bare "page" — page modules (e.g. profiles) use "prof_page",
+# Never use bare "page" ï¿½ page modules (e.g. profiles) use "prof_page",
 # other modules may use their own prefixed keys. A bare "page" key is
 # reserved for no one to avoid cross-module collisions.
 _NAV_KEY = "nav_page"
@@ -88,7 +88,7 @@ def build_services() -> dict:
 
     if not SUPABASE_URL or not SUPABASE_KEY:
         raise ValueError(
-            "Supabase credentials missing — "
+            "Supabase credentials missing ï¿½ "
             f"URL={'SET' if SUPABASE_URL else 'MISSING'}, "
             f"KEY={'SET' if SUPABASE_KEY else 'MISSING'}"
         )
@@ -146,7 +146,7 @@ def render_sidebar(pages: dict) -> str:
             page_keys,
             index=safe_index,
             label_visibility="collapsed",
-            key="nav_radio",         # widget key — not used outside sidebar
+            key="nav_radio",         # widget key ï¿½ not used outside sidebar
         )
 
         # Persist selection under our explicit nav key
@@ -161,15 +161,15 @@ def render_sidebar(pages: dict) -> str:
 
             total_candidates = (
                 db.get_candidate_count()
-                if hasattr(db, "get_candidate_count") else "—"
+                if hasattr(db, "get_candidate_count") else "ï¿½"
             )
             active_jds = (
                 db.get_active_jd_count()
-                if hasattr(db, "get_active_jd_count") else "—"
+                if hasattr(db, "get_active_jd_count") else "ï¿½"
             )
             open_positions = (
                 db.get_open_position_count()
-                if hasattr(db, "get_open_position_count") else "—"
+                if hasattr(db, "get_open_position_count") else "ï¿½"
             )
 
             st.markdown("**?? Quick Stats**")
@@ -191,7 +191,7 @@ def render_sidebar(pages: dict) -> str:
             st.session_state.clear()
             st.rerun()
 
-        st.caption("RecruitIQ v1.0 · AI-Powered Recruiting")
+        st.caption("RecruitIQ v1.0 ï¿½ AI-Powered Recruiting")
 
     return selection
 
@@ -215,13 +215,13 @@ def route(selection: str, pages: dict, services: dict) -> None:
     if selection == "?? Dashboard":
         fn(services["db"])
     elif selection == "?? Profiles":
-        fn()                    # render_profile_database() — no args needed
+        fn()                    # render_profile_database() ï¿½ no args needed
     else:
         try:
             fn(services)
         except TypeError as exc:
             # Graceful fallback: some pages may not yet accept services
-            st.warning(f"Page called without services dict ({exc}) — retrying bare call.")
+            st.warning(f"Page called without services dict ({exc}) ï¿½ retrying bare call.")
             fn()
 
 
