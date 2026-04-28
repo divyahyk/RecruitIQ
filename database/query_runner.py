@@ -1,4 +1,6 @@
-# database/query_runner.py  (updated Strategy 1 block)
+# database/query_runner.py
+from __future__ import annotations
+from typing import Any, List, Dict
 
 def execute_raw(db: Any, sql: str, params: list) -> list[dict]:
     """
@@ -93,3 +95,73 @@ def execute_raw(db: Any, sql: str, params: list) -> list[dict]:
         "_db(), _get_pool(), _pool, _conn, "
         "get_pg_connection(), execute_query()"
     )
+
+
+# ============================================================================
+# Additional Helper Functions
+# ============================================================================
+
+def execute_query(db: Any, sql: str, params: list | None = None) -> list[dict]:
+    """
+    Execute a SELECT query and return results as list of dicts.
+    
+    Args:
+        db: Database manager instance
+        sql: SQL query string
+        params: Query parameters (default: empty list)
+    
+    Returns:
+        List of dictionaries with column names as keys
+    """
+    if params is None:
+        params = []
+    return execute_raw(db, sql, params)
+
+
+def execute_insert(db: Any, sql: str, params: list | None = None) -> None:
+    """
+    Execute an INSERT/UPDATE/DELETE query.
+    
+    Args:
+        db: Database manager instance
+        sql: SQL query string
+        params: Query parameters (default: empty list)
+    """
+    if params is None:
+        params = []
+    execute_raw(db, sql, params)
+
+
+def fetch_one(db: Any, sql: str, params: list | None = None) -> dict | None:
+    """
+    Fetch a single row as a dictionary.
+    
+    Args:
+        db: Database manager instance
+        sql: SQL query string
+        params: Query parameters (default: empty list)
+    
+    Returns:
+        Dictionary or None if no results
+    """
+    if params is None:
+        params = []
+    results = execute_raw(db, sql, params)
+    return results[0] if results else None
+
+
+def fetch_all(db: Any, sql: str, params: list | None = None) -> list[dict]:
+    """
+    Fetch all rows as list of dictionaries.
+    
+    Args:
+        db: Database manager instance
+        sql: SQL query string
+        params: Query parameters (default: empty list)
+    
+    Returns:
+        List of dictionaries
+    """
+    if params is None:
+        params = []
+    return execute_raw(db, sql, params)

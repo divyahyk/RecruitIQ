@@ -1,10 +1,11 @@
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 """
 Service Factory for Social Media Suite
 Instantiates LLM, Banner Generator, and Database Handler
 """
 
 import logging
-from typing import Optional, Dict, Any
 
 from modules.social_media.llm_handler import LLMHandler, Platform, PostStyle
 from modules.social_media.banner_generator import SocialBannerGenerator

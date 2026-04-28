@@ -1,4 +1,6 @@
-﻿"""End-to-end integration test: File → Parse → JobData → DB"""
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
+"""End-to-end integration test: File ? Parse ? JobData ? DB"""
 
 import sys
 import os
@@ -11,7 +13,7 @@ sys.path.insert(0, ".")
 
 print("\n" + "=" * 80)
 print("END-TO-END INTEGRATION TEST")
-print("File → Parse → JobData → Dict (→ DB)")
+print("File ? Parse ? JobData ? Dict (? DB)")
 print("=" * 80)
 
 from modules.jd_engine.jd_parser import JDParser
@@ -42,13 +44,13 @@ class MockLLM:
             return {}
 
 # Step 1: Create parser
-print("\n[1️⃣] Creating JDParser...")
+print("\n[1??] Creating JDParser...")
 llm = MockLLM()
 parser = JDParser(llm=llm)
-print("    ✅ JDParser created")
+print("    ? JDParser created")
 
 # Step 2: Sample JD text
-print("\n[2️⃣] Preparing sample JD...")
+print("\n[2??] Preparing sample JD...")
 sample_jd = """
 JOB DESCRIPTION
 
@@ -76,133 +78,133 @@ Salary: $150K-$200K + equity
 Work Mode: Hybrid (3 days/week in office)
 Positions: 2
 """
-print(f"    ✅ Sample JD prepared ({len(sample_jd)} chars)")
+print(f"    ? Sample JD prepared ({len(sample_jd)} chars)")
 
 # Step 3: Parse JD to dict
-print("\n[3️⃣] Parsing JD to dict...")
+print("\n[3??] Parsing JD to dict...")
 try:
     parsed_dict = parser.parse(sample_jd)
-    print(f"    ✅ Parsed as dict")
+    print(f"    ? Parsed as dict")
     print(f"       Fields: {len(parsed_dict)}")
     print(f"       Role: {parsed_dict.get('role_name')}")
     print(f"       Required skills: {len(parsed_dict.get('skillset_required', []))}")
 except Exception as e:
-    print(f"    ❌ Failed: {e}")
+    print(f"    ? Failed: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)
 
 # Step 4: Parse JD to JobData
-print("\n[4️⃣] Parsing JD to JobData object...")
+print("\n[4??] Parsing JD to JobData object...")
 try:
     job_data = parser.parse_to_job_data(sample_jd)
-    print(f"    ✅ Created JobData")
+    print(f"    ? Created JobData")
     print(f"       Type: {type(job_data).__name__}")
     print(f"       Role: {job_data.role_name}")
     print(f"       Location: {job_data.location}")
     print(f"       Experience: {job_data.experience_min}-{job_data.experience_max} years")
     print(f"       Budget: ${job_data.budget_min:,}-${job_data.budget_max:,}")
 except Exception as e:
-    print(f"    ❌ Failed: {e}")
+    print(f"    ? Failed: {e}")
     import traceback
     traceback.print_exc()
     sys.exit(1)
 
 # Step 5: Modify JobData fields
-print("\n[5️⃣] Modifying JobData fields...")
+print("\n[5??] Modifying JobData fields...")
 try:
     job_data.jd_code = "JD20250115001"
     job_data.client_name = "TechCorp Inc"
     job_data.priority = "High"
     job_data.status = "Active"
     job_data.recruiter_assigned = "Alice Chen"
-    print(f"    ✅ Updated fields")
+    print(f"    ? Updated fields")
     print(f"       Code: {job_data.jd_code}")
     print(f"       Client: {job_data.client_name}")
     print(f"       Recruiter: {job_data.recruiter_assigned}")
 except Exception as e:
-    print(f"    ❌ Failed: {e}")
+    print(f"    ? Failed: {e}")
     import traceback
     traceback.print_exc()
 
 # Step 6: Convert JobData to dict
-print("\n[6️⃣] Converting JobData to dict...")
+print("\n[6??] Converting JobData to dict...")
 try:
     final_dict = job_data.to_dict()
-    print(f"    ✅ Converted to dict")
+    print(f"    ? Converted to dict")
     print(f"       Fields: {len(final_dict)}")
     print(f"       Has all required fields: {all(k in final_dict for k in ['role_name', 'location', 'skillset_required'])}")
 except Exception as e:
-    print(f"    ❌ Failed: {e}")
+    print(f"    ? Failed: {e}")
     import traceback
     traceback.print_exc()
 
 # Step 7: Validate dict for database
-print("\n[7️⃣] Validating dict for database storage...")
+print("\n[7??] Validating dict for database storage...")
 try:
     required_for_db = ['jd_code', 'role_name', 'location', 'skillset_required']
     missing = [k for k in required_for_db if not final_dict.get(k)]
     if missing:
-        print(f"    ⚠️  Missing fields: {missing}")
+        print(f"    ??  Missing fields: {missing}")
     else:
-        print(f"    ✅ All required fields present")
+        print(f"    ? All required fields present")
         print(f"       jd_code: {final_dict['jd_code']}")
         print(f"       role_name: {final_dict['role_name']}")
         print(f"       location: {final_dict['location']}")
         print(f"       skillset_required: {final_dict['skillset_required']}")
 except Exception as e:
-    print(f"    ❌ Failed: {e}")
+    print(f"    ? Failed: {e}")
 
 # Step 8: Test round-trip conversion
-print("\n[8️⃣] Testing round-trip: dict → JobData → dict...")
+print("\n[8??] Testing round-trip: dict ? JobData ? dict...")
 try:
     # Create JobData from dict
     jd2 = JobData.from_jd_dict(final_dict)
-    print(f"    ✅ Created JobData from dict")
+    print(f"    ? Created JobData from dict")
 
     # Convert back to dict
     jd2_dict = jd2.to_dict()
-    print(f"    ✅ Converted back to dict")
+    print(f"    ? Converted back to dict")
 
     # Verify data integrity
     orig_role = final_dict['role_name']
     final_role = jd2_dict['role_name']
     if orig_role == final_role:
-        print(f"    ✅ Data integrity verified: role name matches")
+        print(f"    ? Data integrity verified: role name matches")
     else:
-        print(f"    ❌ Data mismatch: {orig_role} != {final_role}")
+        print(f"    ? Data mismatch: {orig_role} != {final_role}")
 
 except Exception as e:
-    print(f"    ❌ Failed: {e}")
+    print(f"    ? Failed: {e}")
     import traceback
     traceback.print_exc()
 
 # Step 9: Test with validation
-print("\n[9️⃣] Testing parse_with_validation()...")
+print("\n[9??] Testing parse_with_validation()...")
 try:
     job_data3, errors = parser.parse_with_validation(sample_jd)
     if errors:
-        print(f"    ⚠️  Validation errors: {errors}")
+        print(f"    ??  Validation errors: {errors}")
     else:
-        print(f"    ✅ All validations passed")
+        print(f"    ? All validations passed")
         print(f"       Role: {job_data3.role_name}")
         print(f"       Status: Valid and ready for use")
 except Exception as e:
-    print(f"    ❌ Failed: {e}")
+    print(f"    ? Failed: {e}")
     import traceback
     traceback.print_exc()
 
 # Summary
 print("\n" + "=" * 80)
-print("✅ END-TO-END TEST COMPLETED SUCCESSFULLY")
+print("? END-TO-END TEST COMPLETED SUCCESSFULLY")
 print("=" * 80)
 print("\nSummary:")
-print("  ✅ JDParser initialization")
-print("  ✅ JD parsing to dict")
-print("  ✅ JD parsing to JobData")
-print("  ✅ JobData modification")
-print("  ✅ JobData to dict conversion")
-print("  ✅ Database validation")
-print("  ✅ Round-trip conversion")
-print("  ✅ Validation checks")
-print("\nReady for production use! 🚀\n")
+print("  ? JDParser initialization")
+print("  ? JD parsing to dict")
+print("  ? JD parsing to JobData")
+print("  ? JobData modification")
+print("  ? JobData to dict conversion")
+print("  ? Database validation")
+print("  ? Round-trip conversion")
+print("  ? Validation checks")
+print("\nReady for production use! ??\n")

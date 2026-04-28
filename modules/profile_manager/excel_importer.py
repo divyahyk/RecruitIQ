@@ -1,10 +1,11 @@
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 # modules/profile_manager/excel_importer.py
 
 import io
 import hashlib
 import re
 import pandas as pd
-from typing import Dict, List, Tuple, Optional, Any, Union, Set, Callable
 from database.db_factory import get_db_manager
 from modules.ai_engine.llm_handler import LLMHandler
 

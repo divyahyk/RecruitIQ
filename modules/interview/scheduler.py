@@ -1,4 +1,5 @@
-from typing import Dict, List, Tuple, Optional, Any, Union, Set, Callable
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 # modules/interview/scheduler.py
 
 """
@@ -17,7 +18,6 @@ import smtplib
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Dict, List, Tuple, Optional, Any, Union, Set, Callable
 
 import streamlit as st
 
@@ -389,7 +389,6 @@ Warm regards,
 
 
 # Fix missing Tuple import at top
-from typing import Dict, List, Tuple, Optional, Any, Union, Set, Callable
 
 
 # ─────────────────────────────────────────────────────────────────────────────

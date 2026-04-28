@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 # database/excel_import.py
 
 import io
@@ -5,7 +7,6 @@ import re
 import time
 import psycopg2
 import pandas as pd
-from typing import Dict
 
 # ─────────────────────────────────────────────────────────────
 #  COLUMN MAPPING  (Excel header → DB column)

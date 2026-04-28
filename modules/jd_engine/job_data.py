@@ -1,11 +1,12 @@
-﻿"""
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
+"""
 JobData Dataclass
 
 Represents a parsed job description with validation and serialization.
 """
 
 from dataclasses import dataclass, field, asdict
-from typing import Optional, List, Dict, Any
 import json
 from datetime import datetime
 
@@ -19,7 +20,7 @@ class JobData:
     Serialization/deserialization handles JSON and dict formats.
     """
     
-    # ── Core JD Information ───────────────────────────────────────────────────
+    # -- Core JD Information ---------------------------------------------------
     jd_code: Optional[str] = None
     """Unique identifier for the JD (e.g., 'JD20250115001')"""
     
@@ -32,7 +33,7 @@ class JobData:
     work_mode: Optional[str] = None
     """Work mode: 'On-site', 'Remote', or 'Hybrid'"""
     
-    # ── Skills & Requirements ─────────────────────────────────────────────────
+    # -- Skills & Requirements -------------------------------------------------
     skillset_required: List[str] = field(default_factory=list)
     """List of required technical skills"""
     
@@ -45,7 +46,7 @@ class JobData:
     experience_max: Optional[float] = None
     """Maximum years of experience (for level matching)"""
     
-    # ── Budget & Compensation ─────────────────────────────────────────────────
+    # -- Budget & Compensation -------------------------------------------------
     budget_min: Optional[float] = None
     """Minimum salary/budget in base currency"""
     
@@ -55,7 +56,7 @@ class JobData:
     currency: Optional[str] = None
     """Currency code (e.g., 'INR', 'USD', 'EUR')"""
     
-    # ── Positions & Management ────────────────────────────────────────────────
+    # -- Positions & Management ------------------------------------------------
     positions_count: Optional[int] = None
     """Number of open positions for this JD"""
     
@@ -65,7 +66,7 @@ class JobData:
     recruiter_assigned: Optional[str] = None
     """Name of the assigned recruiter"""
     
-    # ── Status & Metadata ─────────────────────────────────────────────────────
+    # -- Status & Metadata -----------------------------------------------------
     status: Optional[str] = None
     """JD status: 'Active', 'Inactive', 'On Hold', 'Closed'"""
     
@@ -78,21 +79,21 @@ class JobData:
     updated_at: Optional[str] = None
     """ISO 8601 timestamp when JD was last updated"""
     
-    # ── Additional Notes ──────────────────────────────────────────────────────
+    # -- Additional Notes ------------------------------------------------------
     description: Optional[str] = None
     """Full JD description text"""
     
     special_requirements: Optional[str] = None
     """Any special or unique requirements"""
     
-    # ── Internal Fields ───────────────────────────────────────────────────────
+    # -- Internal Fields -------------------------------------------------------
     parse_confidence: float = 0.0
     """Confidence score of parsing (0.0-1.0)"""
     
     validation_errors: List[str] = field(default_factory=list)
     """List of validation errors during parsing"""
 
-    # ── Methods ───────────────────────────────────────────────────────────────
+    # -- Methods ---------------------------------------------------------------
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -130,7 +131,7 @@ class JobData:
         Handles:
         - JSON string deserialization for lists
         - CSV string parsing for skill lists
-        - Type coercion (str → float for experience/budget)
+        - Type coercion (str ? float for experience/budget)
         - Missing fields (uses defaults)
         
         Args:

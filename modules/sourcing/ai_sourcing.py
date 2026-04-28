@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 # modules/sourcing/ai_sourcing.py
 
 """
@@ -13,7 +15,6 @@ Generates:
 
 import json
 import re
-from typing import Dict, List, Tuple, Optional, Any, Union, Set, Callable
 
 import streamlit as st
 

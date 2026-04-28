@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 # database/sqlite_manager.py
 
 import hashlib
@@ -6,7 +8,6 @@ import sqlite3
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional, Any, Union, Set, Callable
 
 
 # ─────────────────────────────────────────────────────────────

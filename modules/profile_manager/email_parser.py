@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 # modules/profile_manager/email_parser.py
 
 """
@@ -18,7 +20,6 @@ import tempfile
 from datetime import datetime
 from email.header import decode_header
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any, Union, Set, Callable
 
 import streamlit as st
 

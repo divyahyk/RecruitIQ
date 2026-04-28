@@ -1,24 +1,26 @@
-﻿# app.py – RecruitIQ Main Entry Point
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
+# app.py � RecruitIQ Main Entry Point
 # Python 3.14 | Streamlit | Supabase + psycopg2
 
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# ── Load .env BEFORE anything else touches os.getenv ─────────────────────────
+# -- Load .env BEFORE anything else touches os.getenv -------------------------
 load_dotenv(dotenv_path=Path(__file__).parent / ".env", override=True)
 
 import streamlit as st
 
-# ── Page config (must be first Streamlit call) ────────────────────────────────
+# -- Page config (must be first Streamlit call) --------------------------------
 st.set_page_config(
     page_title="RecruitIQ",
-    page_icon="🎯",
+    page_icon="??",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── UI helpers ────────────────────────────────────────────────────────────────
+# -- UI helpers ----------------------------------------------------------------
 from ui.styles import apply_global_styles
 from ui.auth   import check_auth
 
@@ -27,48 +29,48 @@ apply_global_styles()
 if not check_auth():
     st.stop()
 
-# ── Page module imports ───────────────────────────────────────────────────────
+# -- Page module imports -------------------------------------------------------
 # Each module exposes only a render_* function; no widgets run at import time.
 from ui.pages.dashboard   import render_dashboard
 from ui.pages.profiles    import render_profile_database
 from ui.pages.jd_manager  import render_jd_manager
-from ui.pages.matching    import render_matching          # ← was render_jd_matching
+from ui.pages.matching    import render_matching          # ? was render_jd_matching
 from ui.pages.tracker     import render_candidate_tracker
 from ui.pages.interviews  import render_interview_scheduler
 from ui.pages.social      import render_social_media
 from ui.pages.ai_sourcing import render_ai_sourcing
 from ui.pages.upload      import render_upload_page
 
-# ── Page registry ─────────────────────────────────────────────────────────────
+# -- Page registry -------------------------------------------------------------
 _PAGES: dict[str, object] = {
-    "🏠 Dashboard"    : render_dashboard,
-    "👥 Profiles"     : render_profile_database,
-    "📄 JD Manager"   : render_jd_manager,
-    "🎯 JD Matching"  : render_matching,                 # ← was render_jd_matching
-    "📊 Tracker"      : render_candidate_tracker,
-    "📅 Interviews"   : render_interview_scheduler,
-    "📱 Social Media" : render_social_media,
-    "🤖 AI Sourcing"  : render_ai_sourcing,
-    "⬆️  Upload"      : render_upload_page,
+    "?? Dashboard"    : render_dashboard,
+    "?? Profiles"     : render_profile_database,
+    "?? JD Manager"   : render_jd_manager,
+    "?? JD Matching"  : render_matching,                 # ? was render_jd_matching
+    "?? Tracker"      : render_candidate_tracker,
+    "?? Interviews"   : render_interview_scheduler,
+    "?? Social Media" : render_social_media,
+    "?? AI Sourcing"  : render_ai_sourcing,
+    "??  Upload"      : render_upload_page,
 }
 
-# ── NAV SESSION STATE KEY ─────────────────────────────────────────────────────
+# -- NAV SESSION STATE KEY -----------------------------------------------------
 # IMPORTANT: Use "nav_page" exclusively for navigation state.
-# Never use bare "page" — page modules (e.g. profiles) use "prof_page",
+# Never use bare "page" � page modules (e.g. profiles) use "prof_page",
 # other modules may use their own prefixed keys. A bare "page" key is
 # reserved for no one to avoid cross-module collisions.
 _NAV_KEY = "nav_page"
 
 
-# ── Service factory ───────────────────────────────────────────────────────────
+# -- Service factory -----------------------------------------------------------
 @st.cache_resource
 def build_services() -> dict:
     """
     Builds and caches all heavy singleton services.
 
     Supabase key resolution order (first non-empty wins):
-      SUPABASE_KEY  →  SUPABASE_ANON_KEY  →  SUPABASE_SERVICE_KEY
-      →  SUPABASE_SERVICE_ROLE_KEY
+      SUPABASE_KEY  ?  SUPABASE_ANON_KEY  ?  SUPABASE_SERVICE_KEY
+      ?  SUPABASE_SERVICE_ROLE_KEY
     """
     from database.supabase_manager             import SupabaseManager
     from modules.jd_engine.jd_parser           import JDParser
@@ -86,7 +88,7 @@ def build_services() -> dict:
 
     if not SUPABASE_URL or not SUPABASE_KEY:
         raise ValueError(
-            "Supabase credentials missing — "
+            "Supabase credentials missing � "
             f"URL={'SET' if SUPABASE_URL else 'MISSING'}, "
             f"KEY={'SET' if SUPABASE_KEY else 'MISSING'}"
         )
@@ -106,7 +108,7 @@ def build_services() -> dict:
     }
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
+# -- Sidebar -------------------------------------------------------------------
 def render_sidebar(pages: dict) -> str:
     """
     Renders the sidebar navigation and returns the selected page key.
@@ -119,14 +121,14 @@ def render_sidebar(pages: dict) -> str:
         if os.path.exists("assets/logo.png"):
             st.image("assets/logo.png", use_container_width=True)
         else:
-            st.title("🎯 RecruitIQ")
+            st.title("?? RecruitIQ")
 
         st.markdown("---")
 
         page_keys    = list(pages.keys())
-        default_page = "🏠 Dashboard"
+        default_page = "?? Dashboard"
 
-        # ── Safe index resolution ─────────────────────────────────────────────
+        # -- Safe index resolution ---------------------------------------------
         # _NAV_KEY may hold a stale value after hot-reload or logout;
         # fall back to Dashboard if the stored key is no longer valid.
         current_nav = st.session_state.get(_NAV_KEY, default_page)
@@ -144,7 +146,7 @@ def render_sidebar(pages: dict) -> str:
             page_keys,
             index=safe_index,
             label_visibility="collapsed",
-            key="nav_radio",         # widget key — not used outside sidebar
+            key="nav_radio",         # widget key � not used outside sidebar
         )
 
         # Persist selection under our explicit nav key
@@ -152,25 +154,25 @@ def render_sidebar(pages: dict) -> str:
 
         st.markdown("---")
 
-        # ── Quick stats ───────────────────────────────────────────────────────
+        # -- Quick stats -------------------------------------------------------
         try:
             services = build_services()
             db       = services["db"]
 
             total_candidates = (
                 db.get_candidate_count()
-                if hasattr(db, "get_candidate_count") else "—"
+                if hasattr(db, "get_candidate_count") else "�"
             )
             active_jds = (
                 db.get_active_jd_count()
-                if hasattr(db, "get_active_jd_count") else "—"
+                if hasattr(db, "get_active_jd_count") else "�"
             )
             open_positions = (
                 db.get_open_position_count()
-                if hasattr(db, "get_open_position_count") else "—"
+                if hasattr(db, "get_open_position_count") else "�"
             )
 
-            st.markdown("**📊 Quick Stats**")
+            st.markdown("**?? Quick Stats**")
             col1, col2 = st.columns(2)
             with col1:
                 st.metric("Candidates", total_candidates)
@@ -183,53 +185,53 @@ def render_sidebar(pages: dict) -> str:
         except Exception:
             pass  # sidebar stats must never crash the app
 
-        # ── Logout ────────────────────────────────────────────────────────────
-        if st.button("🚪 Logout", use_container_width=True):
+        # -- Logout ------------------------------------------------------------
+        if st.button("?? Logout", use_container_width=True):
             # Wipe ALL session state so every page module starts fresh
             st.session_state.clear()
             st.rerun()
 
-        st.caption("RecruitIQ v1.0 · AI-Powered Recruiting")
+        st.caption("RecruitIQ v1.0 � AI-Powered Recruiting")
 
     return selection
 
 
-# ── Router ────────────────────────────────────────────────────────────────────
+# -- Router --------------------------------------------------------------------
 def route(selection: str, pages: dict, services: dict) -> None:
     """
     Dispatch to the correct page render function.
 
     Argument contract
     -----------------
-    Dashboard  → fn(db)       owns its own layout, needs only the db handle
-    Profiles   → fn()         manages its own psycopg2 pool, needs nothing
-    All others → fn(services) receive the full services dict
+    Dashboard  ? fn(db)       owns its own layout, needs only the db handle
+    Profiles   ? fn()         manages its own psycopg2 pool, needs nothing
+    All others ? fn(services) receive the full services dict
     """
     fn = pages.get(selection)
     if fn is None:
         st.error(f"Page '{selection}' not found.")
         return
 
-    if selection == "🏠 Dashboard":
+    if selection == "?? Dashboard":
         fn(services["db"])
-    elif selection == "👥 Profiles":
-        fn()                    # render_profile_database() — no args needed
+    elif selection == "?? Profiles":
+        fn()                    # render_profile_database() � no args needed
     else:
         try:
             fn(services)
         except TypeError as exc:
             # Graceful fallback: some pages may not yet accept services
-            st.warning(f"Page called without services dict ({exc}) — retrying bare call.")
+            st.warning(f"Page called without services dict ({exc}) � retrying bare call.")
             fn()
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+# -- Entry point ---------------------------------------------------------------
 def main() -> None:
-    # ── Build services ────────────────────────────────────────────────────────
+    # -- Build services --------------------------------------------------------
     try:
         services = build_services()
     except ValueError as exc:
-        st.error(f"⚠️ Configuration error: {exc}")
+        st.error(f"?? Configuration error: {exc}")
         st.info(
             "Add your credentials to the `.env` file:\n"
             "```\n"
@@ -240,19 +242,19 @@ def main() -> None:
         )
         st.stop()
     except Exception as exc:
-        st.error(f"⚠️ Unexpected startup error: {exc}")
+        st.error(f"?? Unexpected startup error: {exc}")
         st.exception(exc)
         st.stop()
 
-    # ── Render sidebar & route ────────────────────────────────────────────────
+    # -- Render sidebar & route ------------------------------------------------
     selection = render_sidebar(_PAGES)
 
     try:
         route(selection, _PAGES, services)
     except Exception as exc:
-        st.error(f"⚠️ Error rendering **{selection}**: {exc}")
+        st.error(f"?? Error rendering **{selection}**: {exc}")
         st.exception(exc)
-        if st.button("🔄 Reload page"):
+        if st.button("?? Reload page"):
             st.rerun()
 
 

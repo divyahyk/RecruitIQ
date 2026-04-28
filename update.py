@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 """
 RecruitIQ – Backfill: skills + total_experience
 Optimised for large datasets (300K+ rows)

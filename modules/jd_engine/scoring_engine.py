@@ -1,7 +1,8 @@
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 # modules/jd_engine/scoring_engine.py
 
 import re
-from typing import Dict, List, Tuple, Optional, Any, Union, Set, Callable
 from modules.ai_engine.llm_handler import LLMHandler
 from modules.ai_engine.prompt_templates import PromptTemplates
 
